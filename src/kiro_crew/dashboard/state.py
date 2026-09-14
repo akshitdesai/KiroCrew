@@ -3551,6 +3551,7 @@ class _ChatSlot:
         "_fallback_slot_model",
         "_model_pick_gen",
         "_fallback_pick_gen",
+        "_model_access_fallback_used",
         "_posttoken_retry_used",
         "_prestream_exhausted_cycles",
         "_poisoned_reset_used",
@@ -4011,6 +4012,15 @@ class _ChatSlot:
         # snapshotted when the fallback activated.
         self._model_pick_gen: int = 0
         self._fallback_pick_gen: int = 0
+        # One-shot guard for the reactive model-access-denial fallback: a new
+        # conversation whose configured model (commonly the "auto" sentinel) is
+        # refused for entitlement, not throttled, is re-prompted at most ONCE on
+        # the first advertised model this account can run, rather than failing
+        # the first reply. One attempt only, so an account entitled to nothing
+        # falls through to the terminal entitlement error naming what was tried
+        # instead of looping. Refreshed at the start of a genuine user turn (a
+        # synthetic recovery turn inherits True) alongside _posttoken_retry_used.
+        self._model_access_fallback_used: bool = False
         # One-shot guard for the post-token (text-only) transient retry: a turn
         # that has already streamed answer tokens may be re-prompted at most
         # ONCE on a transient 5xx (and only when no tool call fired). Reset on a
